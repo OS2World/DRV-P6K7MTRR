@@ -12,8 +12,8 @@ COMPILE TOOLS
 
 AUTHORS
 ===============
-* 
+* Takayuki 'January June' Suwa
 
 LINKS
 ===============
-* Takayuki 'January June' Suwa
+* 
