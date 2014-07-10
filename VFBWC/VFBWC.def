@@ -1,0 +1,26 @@
+; VFBWC.def - Video Frame Buffer to Write-Combining for P6K7MTRR.sys, ver.0.08e
+;   Copyright 1999-2002 Takayuki 'January June' Suwa
+;
+; This library is free software; you can redistribute it and/or
+; modify it under the terms of the GNU Library General Public
+; License as published by the Free Software Foundation; either
+; version 2 of the License, or (at your option) any later version.
+;
+; This library is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; Library General Public License for more details.
+;
+; You should have received a copy of the GNU Library General Public
+; License along with this library; if not, write to the
+; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+; Boston, MA 02111-1307, USA. */
+
+NAME VFBWC WINDOWCOMPAT
+DESCRIPTION "@#JJSuwa:0.08#@##1##Tue Apr 16 08:11:20 2002 ivory::::5::@@ Video Frame Buffer to Write-Combining for P6K7MTRR.sys"
+PROTMODE
+BASE=0x10000
+STACKSIZE 0x4000
+IMPORTS
+ DOS16ISPMACTIVE = DOSCALLS.712
+

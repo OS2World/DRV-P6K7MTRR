@@ -1,0 +1,602 @@
+<!doctype html public "-//W3C//DTD HTML 3.2//EN">
+
+<html>
+
+ <head>
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+  <meta name="language" content="en">
+  <meta name="author" content="Takayuki 'January June' Suwa / Beliefia Productions">
+  <meta name="date" content="2002-06-18T20:34:17+09:00">
+  <link rev="made" href="mailto:jjsuwa@sys3175.com">
+  <title>Intel P6 / AMD K7 MTRRs management IOCtl PDD ver.0.08a User's Guide</title>
+ </head>
+
+ <body>
+
+  <h1>Intel P6 / AMD K7 MTRRs management IOCtl PDD, ver.0.08a</h1>
+  <strong>Copyright (c) 1999-2002 Takayuki 'January June' Suwa / Beliefia Productions</strong><br>
+  <hr>
+
+  <hr>
+
+  <h1>0. <a name="0">Table of Contents</a></h1>
+  <ul>
+   <li>0. <a href="#0">Table of Contents</a></li>
+   <li>1. <a href="#1">Welcome</a>
+       <ul>
+        <li>1.1. <a href="#1.1">Copyright and Disclaimer</a></li>
+        <li>1.2. <a href="#1.2">System Requirements</a></li>
+        <li>1.3. <a href="#1.3">Contact Author</a></li>
+        <li>1.4. <a href="#1.4">Revision History</a></li>
+       </ul></li>
+   <li>2. <a href="#2">How to Use</a>
+       <ul>
+        <li>2.1. <a href="#2.1">Driver Installation</a></li>
+        <li>2.2. <a href="#2.2">How to Apply Write-Combining to Video Frame Buffer Aperture</a></li>
+       </ul></li>
+   <li>3. <a href="#3">P6K7MTRR.sys Device IOCtl Reference</a>
+       <ul>
+        <li>3.1. <a href="#3.1">Constants and Structures</a></li>
+        <li>3.2. <a href="#3.2">Precautions and Limitations</a></li>
+        <li>3.3. <a href="#3.3"><tt>DosDevIOCtl()</tt> Interface</a>
+           <ul>
+            <li>3.3.1. <a href="#3.3.1"><tt>P6K7MTRR_SETMTRR2DEFAULT</tt> (40h)</a>
+            <li>3.3.2. <a href="#3.3.2"><tt>P6K7MTRR_SETMTRRDEFTYPE</tt> (41h)</a>
+            <li>3.3.3. <a href="#3.3.3"><tt>P6K7MTRR_SETMTRRFIXEDRANGE</tt> (42h)</a>
+            <li>3.3.4. <a href="#3.3.4"><tt>P6K7MTRR_SETMTRRVARIABLERANGE</tt> (43h)</a>
+            <li>3.3.4. <a href="#3.3.4"><tt>P6K7MTRR_SETMSRVALUE</tt> (44h)</a>
+            <li>3.3.6. <a href="#3.3.6"><tt>P6K7MTRR_QRYMTRRCAP</tt> (60h)</a>
+            <li>3.3.7. <a href="#3.3.7"><tt>P6K7MTRR_QRYMTRRDEFTYPE</tt> (61h)</a>
+            <li>3.3.8. <a href="#3.3.8"><tt>P6K7MTRR_QRYMTRRFIXEDRANGE</tt> (62h)</a>
+            <li>3.3.9. <a href="#3.3.9"><tt>P6K7MTRR_QRYMTRRVARIABLERANGE</tt> (63h)</a>
+            <li>3.3.10. <a href="#3.3.10"><tt>P6K7MTRR_QRYMSRVALUE</tt> (64h)</a>
+           </ul></li>
+       </ul></li>
+   <li>4. <a href="#4">Troubleshooting</a></li>
+   <li>5. <a href="#5">Credits</a></li>
+  </ul>
+  <hr>
+
+  <hr>
+
+  <h1>1. <a name="1">Welcome</a></h1>
+  P6K7MTRR.sys is a simple interface physical device driver (PDD) that can manage Memory Type Range Registers (MTRRs) of Intel P6<sup>*</sup> / AMD K7<sup>**</sup> series processors. Programmer can query / modify any MTRR settings via <tt>DosDevIOCtl()</tt> API, from non-Ring0 privileges.<br>
+  A sample executable, VFBWC.exe, sets MTRR write-combining strategy to video frame buffer aperture. It can often improve graphic performance, especially DIVE.<br>
+  Free to use, under the GNU LGPL.<br>
+  <br>
+  <sup>*</sup> P6 includes PentiumPro, PentiumII, Celeron and PentiumIII.<br>
+  <sup>**</sup> K7 includes Athlon and Duron.<br>
+  <hr>
+
+  <h2>1.1. <a name="1.1">Copyright and Disclaimer</a></h2>
+  <ol>
+   <li>'THIS SOFTWARE AND WHOLE SET OF DOCUMENTS' (CALLED 'THE PACKAGE') ARE ENTIRELY COPYRIGHTED BY TAKAYUKI 'JANUARY JUNE' SUWA / BELIEFIA PRODUCTIONS, AUTHOR / HOLDER OF THE PRODUCT.</li>
+   <li>THIS PACKAGE IS DISTRIBUTED UNDER THE &quot;GNU LESSER PUBLIC LICENSE&quot; (LGPL). IT CLAIMS:
+       <ul>
+        <li>YOU CAN USE OR INCLUDE A COMPILED VERSION OF THIS SOFTWARE (P6K7MTRR.SYS / VFBWC.EXE) WITH OTHER SOFTWARES.</LI>
+        <li>YOU CANNOT INCLUDE ANY SOURCE CODE FROM THIS SOFTWARE, WITH THE EXCEPTION OF FILES WHOSE ONLY PURPOSE IS TO DESCRIBE THE LIBRARY INTERFACE (SUCH AS P6K7MTRR.H).</li>
+        <li>ANY MODIFICATIONS OF THIS SOFTWARE MUST BE RELEASED UNDER THE LGPL.</li>
+        <li>YOU MUST GIVE PROMINENT NOTICE THAT YOUR PROGRAM IS:
+            <ol>
+             <li>USING THIS SOFTWARE (INCLUDING VERSION/REVISION NUMBER).</li>
+             <li>THIS SOFTWARE IS UNDER THE LGPL.</li>
+             <li>PROVIDE A COPY OF THE LGPL. (THE FILE COPYING CONTAINS THE LGPL)</li>
+             <li>PRIVIDE A COPY OF SOURCE OF THIS SOFTWARE, OR POINTER WHERE THE SOURCE CAN BE OBTAINED (SUCH AS ANONYMOUS FTP ARCHIVE URI).</li>
+            </ol></li>
+       </ul>
+       SEE &quot;COPYING&quot; FOR DETAIL.</li>
+   <li>THE PACKAGE IS PROVIDED 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.</li>
+   <li>IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DAMAGES, WHETHER IN CONTRACT OR TORT (INCLUDED NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THE PRODUCT, EVEN THOUGH SUCH HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF ANY DAMAGE.</li>
+  </ol>
+  <hr>
+
+  <h2>1.2. <a name="1.2">System Requirements</a></h2>
+  This software will be functioned in environment such as:<br>
+  <ul>
+   <li>OS/2 version 3 or later (Warp v3 / WarpServer v4 / Warp v4 / WSeB / MCPs / ACPs / eCS, uniprocessor or multiprocessor)<br>
+       In order to set MTRRs to all CPUs, version 4.5 or later (Warp v4 w/FP13+, WSeB, MCPs, ACPs or eCS) are required.</li>
+   <li>Intel P6 / AMD K7 series processor</li>
+  </ul>
+  If used for development purpose, some P6 / K7 MTRRs knowledge are of course required.
+  <hr>
+
+  <h2>1.3. <a name="1.3">Contact Author</a></h2>
+  Email to Takayuki 'January June' Suwa:
+  <ul>
+   <li><a href="mailto:jjsuwa@sys3175.com">mailto:jjsuwa@sys3175.com</a></li>
+  </ul>
+  <hr>
+
+  <h2>1.4. <a name="1.4">Revision History</a></h2>
+  <ul>
+   <li><strong>ver.0.01</strong> - December 1st,1999
+       <ol>
+        <li>Initial release.</li>
+       </ol></li>
+   <li><strong>ver.0.02</strong> - December 4th,1999
+       <ol>
+        <li>(P6MTRR.sys) Added parameter/data checking.</li>
+        <li>(P6MTRR.h) Added some comments/constants.</li>
+        <li>(P6MTRR.sym) Included for kernel debugger.</li>
+       </ol></li>
+   <li><strong>ver.0.03</strong> - January 3rd,2000
+       <ol>
+        <li>(P6MTRR.sys) Added P6 fast string feature management IOCtl, <tt>P6MTRR_QRYFASTSTRING</tt> / <tt>P6MTRR_QRYFASTSTRING</tt>.</li>
+        <li>(P6MTRR.h) Added <tt>P6MTRR_QRYFASTSTRING</tt> / <tt>P6MTRR_QRYFASTSTRING</tt> constants/structure definition.</li>
+        <li>(P6MTRR.asm/P6MTRR.def) Included source. In order to build, use ALP and LINK386.</li>
+       </ol></li>
+   <li><strong>ver.0.04</strong> - January 17th,2000
+       <ol>
+        <li>(P6K7MTRR.sys) Renamed to P6K7MTRR.sys due to support AMD K7(Athlon). Obsoleted P6 fast string feature management.</li>
+        <li>(P6K7MTRR.h) Renamed filename and symbols. Removed <tt>P6MTRR_QRYFASTSTRING</tt> / <tt>P6MTRR_QRYFASTSTRING</tt> constants/structure definition.</li>
+        <li>(P6K7MTRR.asm/P6K7MTRR.def) Renamed.</li>
+        <li>(VFBWC.exe) Rewrote wholly.</li>
+        <li>(READMEJ) Added Japanese documentation.</li>
+       </ol></li>
+   <li><strong>ver.0.04 (rev.2)</strong> - January 19th,2000
+       <ol>
+        <li>(VFBWC.exe) Improved video frame buffer size detection. Added -1 option for frational video frame buffer size.</li>
+       </ol></li>
+   <li><strong>ver.0.05</strong> - October 9th,2000
+       <ol>
+        <li>(P6K7MTRR.sys) Added resetting to default feature, <tt>P6K7MTRR_SETMTRR2DEFAULT</tt>.</li>
+        <li>(P6K7MTRR.h) Added <tt>P6K7MTRR_SETMTRR2DEFAULT</tt> constant definition.</li>
+        <li>(VFBWC.exe) Changed to reset to default using <tt>P6K7MTRR_SETMTRR2DEFAULT</tt> before applying settings.</li>
+        <li>(README.htm) Renamed/converted from README and enriched contents.</li>
+       </ol></li>
+   <li><strong>ver.0.05a</strong> - October 30th,2000
+       <ol>
+        <li>(P6K7MTRR.sys) Reduced resident size slightly.</li>
+        <li>(VFBWC.exe) Added more strict PM activity checking.</li>
+       </ol></li>
+   <li><strong>ver.0.05a (rev.2)</strong> - November 7th,2000
+       <ol>
+        <li>(VFBWC.exe) Added experimental Warp4.5-based multiprocessor support.</li>
+       </ol></li>
+   <li><strong>ver.0.06</strong> - March 23rd,2001
+       <ol>
+        <li>(P6K7MTRR.sys) Added /Q switch that surpress any startup messages.</li>
+        <li>(VFBWC.exe) Modified aperture size detection. DIVE feature was no longer required.</li>
+       </ol></li>
+   <li><strong>ver.0.06a</strong> - June 11th,2001
+       <ol>
+        <li>(Package) Changed license to LGPL. Now all sources included.</li>
+        <li>(P6K7MTRR.sys) Changed a few messages.</li>
+        <li>(VFBWC.exe) Rewrote wholly in order to enhance Warp4.5-based multiprocessor support.</li>
+       </ol></li>
+   <li><strong>ver.0.06b</strong> - June 23rd,2001
+       <ol>
+        <li>(P6K7MTRR.sys) Changed a little (source notations).</li>
+        <li>(VFBWC.exe) Modified aperture size detection to use together with GRADD VMAN if available.</li>
+       </ol></li>
+   <li><strong>ver.0.07</strong> - August 27th,2001
+       <ol>
+        <li>(P6K7MTRR.sys) Changed to use <tt>DevHlp_DynamicAPI</tt> for Ring-0 transition on INIT mode, and removed INIT_COMPLETE.</li>
+        <li>(VFBWC.exe) Modified to use external DLL 'SMPUTIL' for multiprocessor handling.</li>
+       </ol></li>
+   <li><strong>ver.0.07a</strong> - September 21st,2001
+       <ol>
+        <li>(P6K7MTRR.sys) Reformatted source code.</li>
+        <li>(VFBWC.exe) Fixed some GRADD video capability enumuration problem.</li>
+       </ol></li>
+   <li><strong>ver.0.07b</strong> - March 19th,2002
+       <ol>
+        <li>(P6K7MTRR.sys) Modified to be able to use '-' as switch prefix character also.</li>
+        <li>(SMPUTIL.dll) Replaced with r1.1.2.</li>
+        <li>(VFBWC.exe) Improved GRADD activity detection.</li>
+       </ol></li>
+   <li><strong>ver.0.07b (rev.2)</strong> - April 16th,2002
+       <ol>
+        <li>(VFBWC.exe) Fixed GRADD activity detection failure that produced SYS3175.</li>
+       </ol></li>
+   <li><strong>ver.0.08</strong> - May 18th,2002
+       <ol>
+        <li>(P6K7MTRR.sys) Modified to be resource manager-aware.</li>
+        <li>(P6K7MTRR.sys) Fixed some minor bug.</li>
+       </ol></li>
+   <li><strong>ver.0.08a</strong> - June 18th,2002
+       <ol>
+        <li>(P6K7MTRR.sys) Added MSR manipulation feature, <tt>P6K7MTRR_QRYMSRVALUE</tt> / <tt>P6K7MTRR_SETMSRVALUE</tt>.</li>
+        <li>(P6K7MTRR.h) Added <tt>P6K7MTRR_QRYMSRVALUE</tt> / <tt>P6K7MTRR_SETMSRVALUE</tt> constants/structure definition.</li>
+       </ol></li>
+  </ul>
+  <hr>
+
+  <hr>
+
+  <h1>2. <a name="2">How to Use</a></h1>
+  <hr>
+
+  <h2>2.1. <a name="2.1">Driver Installation</a></h2>
+  <ol>
+   <li>Unzip archive to where you desire. (e.g. C:\P6K7MTRR)</li>
+   <li>Add
+       <table border="1"><tbody><tr><td>
+<pre>DEVICE=<i>d</i>:\<i>path</i>\P6K7MTRR.sys</pre>
+       </td></tr></tbody></table>
+       line to your CONFIG.SYS. (<i>d</i> and <i>path</i> must be replaced with actual installation drive / path)</li>
+   <li>Restart your system. If installation successfully, you will see:
+       <table border="1"><tbody><tr><td>
+<pre>P6K7MTRR.sys - Intel P6 / AMD K7 MTRRs management IOCtl PDD, ver.0.08
+Copyright (c) 1999-2002 Takayuki 'January June' Suwa
+Intel P6 MTRR feature is found. The driver has been installed.</pre>
+       </td></tr></tbody></table>
+       or
+       <table border="1"><tbody><tr><td>
+<pre>P6K7MTRR.sys - Intel P6 / AMD K7 MTRRs management IOCtl PDD, ver.0.08
+Copyright (c) 1999-2002 Takayuki 'January June' Suwa
+AMD K7 MTRR feature is found. The driver has been installed.</pre>
+       </td></tr></tbody></table>
+       After restarting, you will found:
+       <table border="1"><tbody><tr><td>
+<pre>Driver: P6K7MTRR.sys  -  Intel P6 / AMD K7 MTRRs management IOCtl PDD
+Vendor: Takayuki 'January June' Suwa  Version: 1.1  Date (MDY): 5/18/2002
+Flag:   STATIC     Type-Subtype: OS2 - HELPER</pre>
+       </td></tr></tbody></table>
+       in <tt>rmview /d</tt> listing when resource manager-aware environments.</li>
+   <li>In order not to show any messages, add /Q switch:
+       <table border="1"><tbody><tr><td>
+<pre>DEVICE=<i>d</i>:\<i>path</i>\P6K7MTRR.sys /Q</pre>
+       </td></tr></tbody></table></li>
+  </ol>
+  <hr>
+
+  <h2>2.2. <a name="2.2">How to Apply Write-Combining to Video Frame Buffer Aperture</a></h2>
+  <ol>
+   <li>Run VFBWC.exe from Presentation Manager-aware environment such as WPS OS/2 Windowed VIO. You will see such as:
+       <table border="1"><tbody><tr><td>
+<pre>VFBWC.exe - Video Frame Buffer to Write-Combining for P6K7MTRR.sys, ver.0.08e
+Copyright 1999-2002 Takayuki 'January June' Suwa.
+&nbsp;
+main memory :
+  81920 pages @ 0x00000000, 327680kB -&gt; write-back, valid
+video frame buffer aperture :
+  576 pages @ 0xe6000000, 2304kB -&gt; write-combining, valid
+VGA region (32 pages @ 0x000a0000, 128kB) : as-is
+&nbsp;
+in order to apply this setting, rerun with -a option.</pre>
+       </td></tr></tbody></table>
+       In this example, video frame buffer aperture PhysAddr is 0xe6000000 and Pages is 576.</li>
+   <li>If detection seems true, rerun VFBWC.exe with <tt>-a</tt> option.<br>
+       If seems false, add proper PhysAddr in hexadecimal and Pages in decimal such as:<br>
+       <table border="1"><tbody><tr><td>
+<pre>VFBWC e6000000 1024 -a</pre>
+       </td></tr></tbody></table>
+       In this example, &quot;e6000000&quot; is PhysAddr, and &quot;1024&quot; is Pages.<br>
+       You will see:
+       <table border="1"><tbody><tr><td>
+<pre>setting has been applied.</pre>
+       </td></tr></tbody></table>
+       On Warp4.5-based multiprocessor environments, VFBWC will detect all available CPUs and apply to them automatically.</li>
+   <li>To apply automatically during startup sequence, add
+       <table border="1"><tbody><tr><td>
+<pre>RUN=<i>d</i>:\<i>path</i>\VFBWC.exe <i>PhysAddr</i> <i>Pages</i> -a</pre>
+       </td></tr></tbody></table>
+       line to your CONFIG.SYS. (<i>d</i> and <i>path</i> must be replaced with actual installation drive/path)<br>
+       <strong>Use of <tt>CALL=</tt> statement is NOT recommended, especially on Warp4.5-based multiprocessor environments (causes hang-up).</strong><br>
+       In this case <i>PhysAddr</i> and <i>Pages</i> also must be specified, because autodetection cannot be used in pre-Presentation Manager environment.<br>
+       And, for laptop/notebook machines,
+       <table border="1"><tbody><tr><td>
+<pre>RUN=<i>d</i>:\<i>path</i>\VFBWC.exe <i>PhysAddr</i> <i>Pages</i> -a -d</pre>
+       </td></tr></tbody></table>
+       to re-apply automatically after APM suspend resuming.</li>
+   <li>Run VFBWC.exe with -?, and you will see usage summary and other options:
+       <table border="1"><tbody><tr><td>
+<pre>usage:
+  VFBWC.exe  [-options]  [{PhysAddr in hexadecimal}  {Pages in decimal}]
+    PhysAddr/Pages is not specified, VFBWC will try to detect physical
+    address/pages of video frame buffer aperture.
+    (requires Presentation Manager activity)
+options:
+  -1  rounds Pages up to 1MB granule
+  -a  applies settings to MTTRs actually
+  -b  rings beep when setting is applied
+  -d  goes into daemon mode, waits until APM suspend resuming and re-apply
+  -i  turns to invalid settings to video frame buffer aperture /
+        uncacheable to VGA region
+  -v  also applies write-combining to VGA region
+  -?  displays this message</pre>
+       </td></tr></tbody></table></li>
+  </ol>
+  <hr>
+
+  <hr>
+
+  <h1>3. <a name="3">P6K7MTRR.sys Device IOCtl Reference</a></h1>
+  <hr>
+
+  <h2>3.1. <a name="3.1">Constants and Structures</a></h2>
+  All constants and structures needed for development are defined in P6K7MTRR.h. See also.
+  <hr>
+
+  <h2>3.2. <a name="3.2">Precautions and Limitations</a></h2>
+  <ul>
+   <li>Be with great care when modifying any MTRRs.<br>
+       Improper MTRR settings may bring kernel-level crashes or significant performance degradation immediately.</li>
+   <li>One <tt>DosDevIOCtl()</tt> call will affect one of any CPUs only.<br>
+       Thus, in multiprocessor environments, multiple <tt>DosDevIOCtl()</tt> calls must be required with thread-CPU binding such as <tt>DosSetThreadAffinity()</tt> (Warp4.5+ only). See sources of VFBWC in detail.</li>
+  </ul>
+  <hr>
+
+  <h2>3.3. <a name="3.3"><tt>DosDevIOCtl()</tt> Interface</a></h2>
+  <hr>
+
+  <h3>3.3.1. <a name="3.3.1"><tt>P6K7MTRR_SETMTRR2DEFAULT</tt> (40h)</a></h3>
+  <dl>
+   <dt><strong>Category:</strong></dt>
+    <dd><tt>IOCTL_P6K7MTRR</tt> (c4h)</dd>
+   <dt><strong>Function:</strong></dt>
+    <dd><tt>P6K7MTRR_SETMTRR2DEFAULT</tt> (40h)</dd>
+   <dt><strong>Desctiption:</strong></dt>
+    <dd>Set all MTRR settings to default</dd>
+   <dt><strong>Parameter Packet Format:</strong></dt>
+    <dd>None. This pointer should be <tt>NULL</tt>.</dd>
+   <dt><strong>Data Packet Format:</strong></dt>
+    <dd>None. This pointer should be <tt>NULL</tt>.</dd>
+   <dt><strong>Returns:</strong></dt>
+    <dd><dl>
+         <dt><tt>NO_ERROR</tt></dt>
+          <dd>Success.</dd>
+         <dt><tt>ERROR_I24_INVALID_PARAMETER</tt></dt>
+          <dd>Not supported.</dd>
+        </dl></dd>
+   <dt><strong>Remarks:</strong></dt>
+    <dd>In this function, 'default' means a set of all MTRR settings at initialization of P6K7MTRR.sys during startup sequence.</dd>
+  </dl>
+  <hr>
+
+  <h3>3.3.2. <a name="3.3.2"><tt>P6K7MTRR_SETMTRRDEFTYPE</tt> (41h)</a></h3>
+  <dl>
+   <dt><strong>Category:</strong></dt>
+    <dd><tt>IOCTL_P6K7MTRR</tt> (c4h)</dd>
+   <dt><strong>Function:</strong></dt>
+    <dd><tt>P6K7MTRR_SETMTRRDEFTYPE</tt> (41h)</dd>
+   <dt><strong>Desctiption:</strong></dt>
+    <dd>Set MTRR default type</dd>
+   <dt><strong>Parameter Packet Format:</strong></dt>
+    <dd>None. This pointer should be <tt>NULL</tt>.</dd>
+   <dt><strong>Data Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRDEFTYPEDATA</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Returns:</strong></dt>
+    <dd><dl>
+         <dt><tt>NO_ERROR</tt></dt>
+          <dd>Success.</dd>
+         <dt><tt>ERROR_I24_INVALID_PARAMETER</tt></dt>
+          <dd>Wrong default memory type is specified.</dd>
+        </dl></dd>
+   <dt><strong>Remarks:</strong></dt>
+    <dd>MTRR enabled flag cannot be 0, because of restriction of P6K7MTRR.sys.</dd>
+  </dl>
+  <hr>
+
+  <h3>3.3.3. <a name="3.3.3"><tt>P6K7MTRR_SETMTRRFIXEDRANGE</tt> (42h)</a></h3>
+  <dl>
+   <dt><strong>Category:</strong></dt>
+    <dd><tt>IOCTL_P6K7MTRR</tt> (c4h)</dd>
+   <dt><strong>Function:</strong></dt>
+    <dd><tt>P6K7MTRR_SETMTRRFIXEDRANGE</tt> (42h)</dd>
+   <dt><strong>Desctiption:</strong></dt>
+    <dd>Set MTRR fixed ranges</dd>
+   <dt><strong>Parameter Packet Format:</strong></dt>
+    <dd>None. This pointer should be <tt>NULL</tt>.</dd>
+   <dt><strong>Data Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRFIXEDRANGEDATA</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Returns:</strong></dt>
+    <dd><dl>
+         <dt><tt>NO_ERROR</tt></dt>
+          <dd>Success.</dd>
+         <dt><tt>ERROR_I24_INVALID_PARAMETER</tt></dt>
+          <dd>Wrong memory types are specified.</dd>
+        </dl></dd>
+   <dt><strong>Remarks:</strong></dt>
+    <dd>None.</dd>
+  </dl>
+  <hr>
+
+  <h3>3.3.4. <a name="3.3.4"><tt>P6K7MTRR_SETMTRRVARIABLERANGE</tt> (43h)</a></h3>
+  <dl>
+   <dt><strong>Category:</strong></dt>
+    <dd><tt>IOCTL_P6K7MTRR</tt> (c4h)</dd>
+   <dt><strong>Function:</strong></dt>
+    <dd><tt>P6K7MTRR_SETMTRRVARIABLERANGE</tt> (43h)</dd>
+   <dt><strong>Desctiption:</strong></dt>
+    <dd>Set MTRR variable range</dd>
+   <dt><strong>Parameter Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRVARIABLERANGEPARM</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Data Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRVARIABLERANGEDATA</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Returns:</strong></dt>
+    <dd><dl>
+         <dt><tt>NO_ERROR</tt></dt>
+          <dd>Success.</dd>
+         <dt><tt>ERROR_I24_INVALID_PARAMETER</tt></dt>
+          <dd>Either wrong index or memory type is specified (or both).</dd>
+        </dl></dd>
+   <dt><strong>Remarks:</strong></dt>
+    <dd>None.</dd>
+  </dl>
+  <hr>
+
+  <h3>3.3.5. <a name="3.3.5"><tt>P6K7MTRR_SETMSRVALUE</tt> (44h)</a></h3>
+  <dl>
+   <dt><strong>Category:</strong></dt>
+    <dd><tt>IOCTL_P6K7MTRR</tt> (c4h)</dd>
+   <dt><strong>Function:</strong></dt>
+    <dd><tt>P6K7MTRR_SETMSRVALUE</tt> (44h)</dd>
+   <dt><strong>Desctiption:</strong></dt>
+    <dd>Set MSR value</dd>
+   <dt><strong>Parameter Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRMSRVALUEPARM</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Data Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRMSRVALUEDATA</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Returns:</strong></dt>
+    <dd><dl>
+         <dt><tt>NO_ERROR</tt></dt>
+          <dd>Success.</dd>
+         <dt><tt>ERROR_I24_INVALID_PARAMETER</tt></dt>
+          <dd>Not supported.</dd>
+        </dl></dd>
+   <dt><strong>Remarks:</strong></dt>
+    <dd>Be careful because any access to undefined MSR causes kernel-level crash (GPF).</dd>
+  </dl>
+  <hr>
+
+  <h3>3.3.6. <a name="3.3.6"><tt>P6K7MTRR_QRYMTRRCAP</tt> (60h)</a></h3>
+  <dl>
+   <dt><strong>Category:</strong></dt>
+    <dd><tt>IOCTL_P6K7MTRR</tt> (c4h)</dd>
+   <dt><strong>Function:</strong></dt>
+    <dd><tt>P6K7MTRR_QRYMTRRCAP</tt> (60h)</dd>
+   <dt><strong>Desctiption:</strong></dt>
+    <dd>Query MTRR capabilities</dd>
+   <dt><strong>Parameter Packet Format:</strong></dt>
+    <dd>None. This pointer should be <tt>NULL</tt>.</dd>
+   <dt><strong>Data Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRCAPDATA</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Returns:</strong></dt>
+    <dd><dl>
+         <dt><tt>NO_ERROR</tt></dt>
+          <dd>Success.</dd>
+        </dl></dd>
+   <dt><strong>Remarks:</strong></dt>
+    <dd>None.</dd>
+  </dl>
+  <hr>
+
+  <h3>3.3.7. <a name="3.3.7"><tt>P6K7MTRR_QRYMTRRDEFTYPE</tt> (61h)</a></h3>
+  <dl>
+   <dt><strong>Category:</strong></dt>
+    <dd><tt>IOCTL_P6K7MTRR</tt> (c4h)</dd>
+   <dt><strong>Function:</strong></dt>
+    <dd><tt>P6K7MTRR_QRYMTRRDEFTYPE</tt> (61h)</dd>
+   <dt><strong>Desctiption:</strong></dt>
+    <dd>Query MTRR default type</dd>
+   <dt><strong>Parameter Packet Format:</strong></dt>
+    <dd>None. This pointer should be <tt>NULL</tt>.</dd>
+   <dt><strong>Data Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRDEFTYPEDATA</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Returns:</strong></dt>
+    <dd><dl>
+         <dt><tt>NO_ERROR</tt></dt>
+          <dd>Success.</dd>
+        </dl></dd>
+   <dt><strong>Remarks:</strong></dt>
+    <dd>None.</dd>
+  </dl>
+  <hr>
+
+  <h3>3.3.8. <a name="3.3.8"><tt>P6K7MTRR_QRYMTRRFIXEDRANGE</tt> (62h)</a></h3>
+  <dl>
+   <dt><strong>Category:</strong></dt>
+    <dd><tt>IOCTL_P6K7MTRR</tt> (c4h)</dd>
+   <dt><strong>Function:</strong></dt>
+    <dd><tt>P6K7MTRR_QRYMTRRFIXEDRANGE</tt> (62h)</dd>
+   <dt><strong>Desctiption:</strong></dt>
+    <dd>Query MTRR fixed ranges</dd>
+   <dt><strong>Parameter Packet Format:</strong></dt>
+    <dd>None. This pointer should be <tt>NULL</tt>.</dd>
+   <dt><strong>Data Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRFIXEDRANGEDATA</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Returns:</strong></dt>
+    <dd><dl>
+         <dt><tt>NO_ERROR</tt></dt>
+          <dd>Success.</dd>
+        </dl></dd>
+   <dt><strong>Remarks:</strong></dt>
+    <dd>None.</dd>
+  </dl>
+  <hr>
+
+  <h3>3.3.9. <a name="3.3.9"><tt>P6K7MTRR_QRYMTRRVARIABLERANGE</tt> (63h)</a></h3>
+  <dl>
+   <dt><strong>Category:</strong></dt>
+    <dd><tt>IOCTL_P6K7MTRR</tt> (c4h)</dd>
+   <dt><strong>Function:</strong></dt>
+    <dd><tt>P6K7MTRR_QRYMTRRVARIABLERANGE</tt> (63h)</dd>
+   <dt><strong>Desctiption:</strong></dt>
+    <dd>Query MTRR variable range</dd>
+   <dt><strong>Parameter Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRVARIABLERANGEPARM</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Data Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRVARIABLERANGEDATA</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Returns:</strong></dt>
+    <dd><dl>
+         <dt><tt>NO_ERROR</tt></dt>
+          <dd>Success.</dd>
+         <dt><tt>ERROR_I24_INVALID_PARAMETER</tt></dt>
+          <dd>Wrong index is specified.</dd>
+        </dl></dd>
+   <dt><strong>Remarks:</strong></dt>
+    <dd>None.</dd>
+  </dl>
+  <hr>
+
+  <h3>3.3.10. <a name="3.3.10"><tt>P6K7MTRR_QRYMSRVALUE</tt> (64h)</a></h3>
+  <dl>
+   <dt><strong>Category:</strong></dt>
+    <dd><tt>IOCTL_P6K7MTRR</tt> (c4h)</dd>
+   <dt><strong>Function:</strong></dt>
+    <dd><tt>P6K7MTRR_QRYMSRVALUE</tt> (64h)</dd>
+   <dt><strong>Desctiption:</strong></dt>
+    <dd>Query MSR value</dd>
+   <dt><strong>Parameter Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRMSRVALUEPARM</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Data Packet Format:</strong></dt>
+    <dd><tt>P6K7MTRRMSRVALUEDATA</tt>. See also P6K7MTRR.h.</dd>
+   <dt><strong>Returns:</strong></dt>
+    <dd><dl>
+         <dt><tt>NO_ERROR</tt></dt>
+          <dd>Success.</dd>
+         <dt><tt>ERROR_I24_INVALID_PARAMETER</tt></dt>
+          <dd>Not supported.</dd>
+        </dl></dd>
+   <dt><strong>Remarks:</strong></dt>
+    <dd>Be careful because any access to undefined MSR causes kernel-level crash (GPF).</dd>
+  </dl>
+  <hr>
+
+  <hr>
+
+  <h1>4. <a name="4">Troubleshooting</a></h1>
+  <ol>
+   <li><strong>Q. P6K7MTRR.sys cannot be installed on my machine...</strong><br>
+       A. CPU of your machine is not Intel P6 nor AMD K7 <tt>:)</tt></li>
+   <li><strong>Q. VFBWC autodetection is not functioned...</strong><br>
+       A. This feature requires PM activity. Or, PM driver of your video card is buggy <tt>:)</tt></li>
+  </ol>
+  <hr>
+
+  <hr>
+
+  <h1>5. <a name="5">Credits</a></h1>
+  <dl>
+   <dt><strong>Development</strong></dt>
+    <dl>
+     <dt><strong>Programming</strong></dt>
+      <dd>Takayuki 'January June' Suwa / Beliefia Productions</dd>
+    </dl>
+    <dl>
+     <dt><strong>Documentation</strong></dt>
+      <dd>Takayuki 'January June' Suwa / Beliefia Productions</dd>
+    </dl>
+   <dt><strong>Special thanks to</strong></dt>
+    <dl>
+     <dt><strong>Masaharu 'Densuke' Nagata</strong></dt>
+      <dd>He allowed me to replicate WARP4 Developer's Toolkit <strong>UNDER LEGAL LICENSE</strong>. Thanks a lot.</dd>
+     <dt><strong>SciTech Display Doctor 7 for OS/2 development team</strong></dt>
+      <dd>Congratulations! <tt>:)</tt></dd>
+    </dl>
+  </dl>
+  <hr>
+
+  <hr>
+
+  Copyright 1999-2002 Takayuki 'January June' Suwa / Beliefia Productions. All rights reserved.<br>
+  Beliefia Productions and its logo design are trademarks of Beliefia Productions. All rights reserved.<br>
+  Other copyrighted works (images, musics, programs, and so on), trademarks and servicemarks in this document are owned by their respective owners.<br>
+  <br>
+  [This document is HTML3.2(Wilbur)-compliant.]
+
+ </body>
+
+</html>
